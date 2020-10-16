@@ -8,7 +8,7 @@
 #include <Wire.h>
 
 #define SLAVE_ADDRESS 0x04
-#define LOOP_DELAY 30
+#define LOOP_DELAY 50
 
 //Encoder knobLeft(2, 5);
 //Encoder knobRight(3, 6);
@@ -23,9 +23,9 @@ double prePos = 0; // Previous Position
 
 
 const byte chanA1=2; // pin assignments for encoder channels
-const byte chanB1=4; // attach the channel left of center to pin 2 and the other to pin 4
+const byte chanB1=5; // attach the channel left of center to pin 2 and the other to pin 4
 const byte chanA2=3;// same format of pin attachments as encoder1
-const byte chanB2=5;
+const byte chanB2=6;
 //ISR varialbes
 volatile int countsL=0; // defined as volitile because they change frequently inside an ISR
 volatile int countsR=0;
@@ -35,6 +35,8 @@ volatile byte lastStateL=0;
 volatile byte lastStateR=0;
 volatile double angPosL=0; // represent angular posistion for wheels
 volatile double angPosR=0;
+volatile double angPosLO=0;
+volatile double angPosRO=0;
 volatile double angVel_L=0; // represent angular velocity for each virtual bot wheel
 volatile double angVel_R=0;
 volatile double oldTimeL=0;// millisenconds recorded at last ISR run
@@ -65,12 +67,20 @@ void setup() {
   digitalWrite(4, HIGH);
   pinMode(12, INPUT);
   Serial.begin(9600); 
+
+  //setup for encoder
+  pinMode(chanA1, INPUT_PULLUP);
+  pinMode(chanA2, INPUT_PULLUP);
+  pinMode(chanB1, INPUT_PULLUP);
+  pinMode(chanB2, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(chanA1), encoderCount_isr_left, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(chanA2), encoderCount_isr_left, CHANGE);
   // initialize i2c as slave
   Wire.begin(SLAVE_ADDRESS);
   // define callbacks for i2c communication
   Wire.onReceive(receiveData);
   //Wire.onRequest(sendData); 
-  delay(10000);
+  delay(1000);
 }
 
 double I = 0; // Integral
@@ -88,7 +98,7 @@ double controlr = 0;
 double umax = 7.2; // Max voltage of battery and U)
  
 void loop() {  
-   r = 12.0*5.0*6.283185307 / 19;//(3.14159265*5.75);
+   r = 12.0*1.0*6.283185307 / 19;//(3.14159265*5.75);
    //Serial.println(r); // Remove later
  
 //calculation of position
@@ -110,18 +120,18 @@ void loop() {
   Phi_old=Phi_new;
 
   
-  //prints calculated position values in format: x [tab] y [tab] phi
-  if(millis()%500==0){ // print values every 0.5 second
+//  prints calculated position values in format: x [tab] y [tab] phi
+ // if(millis()%500==0){ // print values every 0.5 second
     Serial.print(x_new); Serial.print("\t"); Serial.print(y_new);Serial.print("\t"); Serial.println(Phi_new);
-  }
+ // }
 
 
     //Serial.println(number); // For debugging
     //Serial.println();
 
    double e = r - angPosL; // Error in rad
-   //Serial.print("Error: ");
-   //Serial.println(e);
+//   Serial.print("Error: ");
+//   Serial.println(e);
    if (Ts > 0) {
      D = (e - ePast)/Ts; // rad/sec Derivative 
      ePast = e;
@@ -151,7 +161,7 @@ void loop() {
    //Serial.print("Volts Out Maxed: "); // For debugging
    //Serial.print(u);
    //Serial.println();
-   control = (u / umax) * 64; // Making input between 0-255
+   control = (u / umax) * 255; // Making input between 0-255
    //Serial.print("Motor Command: "); // For Debugging
    //Serial.print(control);
    //Serial.println();
@@ -189,7 +199,7 @@ void loop() {
    //Serial.print("Volts Out Maxed: "); // For debugging
    //Serial.print(u);
    //Serial.println();
-   controlr = (ur / umax) * 64; // Making input between 0-255
+   controlr = (ur / umax) * 255; // Making input between 0-255
    //Serial.print("Motor Command: "); // For Debugging
    //Serial.print(control);
    //Serial.println();
@@ -237,14 +247,15 @@ void encoderCount_isr_left() {
 
   angPosL=countsL*2*3.14/N; //calculate angular position in radians
   if((double)millis()-oldTimeL > 10){ //prevents encoder "bumps" from setting angulr velocity unreasonably high
-    angVel_L= (4000*3.14) / (((double)millis()-oldTimeL)*N); //calculate angular velocity
+    angVel_L= (angPosL-angPosLO) / (((double)millis()-oldTimeL)); //calculate angular velocity
     oldTimeL=millis();
     if(c_countsL<countsL){ // direction indication
         angVel_L= -1*angVel_L;
     }
+    angPosLO=angPosL;
   }
 
-  countsL=countsL%N;
+  //countsL=countsL%N;
   lastStateL=currentState1; // currentState becomes last state
 //  Serial.println(angVel_L);
 }
@@ -264,16 +275,16 @@ void encoderCount_isr_right() {
     countsR-=2;
   }
 
-  angPosR=countsR*2*3.14/N;
+  angPosR=(double)countsR*2*3.14/(double)N;
   if((double)millis()-oldTimeR > 10){ // avoid "bumps" from encoder
-    angVel_R= (4000*3.14) / (((double)millis()-oldTimeR)*N);
+    angVel_R= (angPosR-angPosRO) / (((double)millis()-oldTimeR)*N);
     oldTimeR=millis();
      if(c_countsR<countsR){ //direction indication
         angVel_R= -1*angVel_R;
     }
   }
 
-  countsR=countsR%N;
+  //countsR=countsR%N;
   lastStateR=currentState2; // currentState becomes last state
- // Serial.println(angVel_R);
+  //Serial.println(angVel_R);
 }
