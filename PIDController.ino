@@ -13,8 +13,8 @@
 Encoder knobLeft(2, 5);
 Encoder knobRight(3, 6);
 double Kp = 1.5;    // V/rad
-double Ki = 0.009; //.1; // V/rad*sec
-double Kd = 0.1; //.1; // V/(rad/sec)
+double Ki = 0.005; //.1; // V/rad*sec
+double Kd = 0.01;//0.1; //.1; // V/(rad/sec)
 double r = 0; // Desired radian
 int number = 0; // Data recieved
 double angVel = 0; // Current Velocity 
@@ -55,6 +55,9 @@ double ur = 0;
 double control = 0; // Input to PWM waveform (0-255)
 double controlr = 0;
 double umax = 7.2; // Max voltage of battery and U)
+double distance = 12.0*10.0*6.283185307 / 17.0;
+double e = 0;
+double er = 0;
  
 void loop() {  
   // number is quadrant from pi and r is radians to move
@@ -67,7 +70,24 @@ void loop() {
    } else if (number == 1){
     r = 0;
    }
-   r = 12.0*5.0*6.283185307 / 17;//(3.14159265*5.75);
+
+  if (r > distance) {
+    r = distance;
+  }
+
+  if ((e < 0.2) && (er<0.2)){
+    if (r < distance) {
+      r = r + (12.0*0.5*6.283185307 / 17.0);
+    }
+    if (r > distance) {
+      r = distance;
+    }
+     
+  }
+   //r = 12.0*0.5*6.283185307 / 17; //(3.14159265*5.75);
+   Serial.print("R : ");
+   Serial.println(r);
+   
    //Serial.println(r); // Remove later
    long newLeft; // new postion
    newLeft=knobLeft.read(); // Read in position count
@@ -104,7 +124,7 @@ void loop() {
     //Serial.println(number); // For debugging
     //Serial.println();
 
-   double e = r - leftAng; // Error in rad
+   e = r - leftAng; // Error in rad
    //Serial.print("Error: ");
    //Serial.println(e);
    if (Ts > 0) {
@@ -136,13 +156,13 @@ void loop() {
    //Serial.print("Volts Out Maxed: "); // For debugging
    //Serial.print(u);
    //Serial.println();
-   control = (u / umax) * 64; // Making input between 0-255
+   control = (u / umax) * 255; // Making input between 0-255
    //Serial.print("Motor Command: "); // For Debugging
    //Serial.print(control);
    //Serial.println();
 
 
-   double er = r - rightAng; // Error in rad
+   er = r - rightAng; // Error in rad
    //Serial.print("Error: ");
    //Serial.println(e);
    if (Ts > 0) {
@@ -174,7 +194,7 @@ void loop() {
    //Serial.print("Volts Out Maxed: "); // For debugging
    //Serial.print(u);
    //Serial.println();
-   controlr = (ur / umax) * 64; // Making input between 0-255
+   controlr = (ur / umax) * 255; // Making input between 0-255
    //Serial.print("Motor Command: "); // For Debugging
    //Serial.print(control);
    //Serial.println();
