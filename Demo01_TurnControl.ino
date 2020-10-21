@@ -83,11 +83,10 @@ void loop() {
     }
      
   }
-  angle = angle * (3.14/180)
   //angle = 15;
 
-  rl = -(angle/360)*13;
-  rr = (angle/360)*13;
+  rl = -(angle/360)*6.28;
+  rr = (angle/360)*6.28;
   
 
   
