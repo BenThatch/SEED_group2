@@ -14,15 +14,14 @@ Encoder knobLeft(2, 5);
 Encoder knobRight(3, 6);
 double Kpl = 4.0;    // V/rad
 double Kil = 0.02;// 0.08; //.1; // V/rad*sec
-double Kdl = 0.01; //0.1;//0.1; //.1; // V/(rad/sec)
+double Kdl = 0; //0.1;//0.1; //.1; // V/(rad/sec)
 
 double Kpr = 3.5;    // V/rad
 double Kir = 0.03;//0.07; //.1; // V/rad*sec
-double Kdr = 0.01;//0.1;//0.1; //.1; // V/(rad/sec)
+double Kdr = 0;//0.1;//0.1; //.1; // V/(rad/sec)
 
 double rl = 0; // Desired radian left
 double rr = 0; // Desired radian right
-double r=0;
 int number = 0; // Data recieved
 double angVel = 0; // Current Velocity 
 double prePos = 0; // Previous Position
@@ -68,8 +67,6 @@ double er = 0;
 
 double angle = 0;
 double angleD = 180;
-
-boolean didTurn =false;
  
 void loop() {  
 
@@ -84,34 +81,15 @@ void loop() {
     if (angle > angleD) {
       angle = angleD;
     }
-    if( (angle-angleD) < 0.1){
-      didTurn=true;
-    }
-  }
-  
-  angle = angle * (3.14/180)
-  //angle = 15;
-
-  rl = -(angle/360)*13.25;
-  rr = (angle/360)*13;
-  
-  if(didTurn){
-    rl=r;
-    rr=r
-     if (r > distance) {
-    r = distance;
-  }
-
-  if ((e < 0.2) && (er<0.2)){
-    if (r < distance) {
-      r = r + (12.0*0.5*6.283185307 / 16.5);
-    }
-    if (r > distance) {
-      r = distance;
-    }
      
   }
-  }
+
+  //angle = 180;
+
+  rl = -(angle/360)*(12*3.14)*(2*3.14/19);
+  rr = (angle/360)*(12*3.14)*(2*3.14/19);
+  
+
   
    Serial.print("RL : ");
    Serial.println(rl);
@@ -184,13 +162,13 @@ void loop() {
   //if (abs(u) < 0.005) {
   //  u = 0;
   // }
-   //Serial.print("Volts Out Maxed: "); // For debugging
-   //Serial.print(u);
-   //Serial.println();
-   control = (u / umax) * 255; // Making input between 0-255
-   //Serial.print("Motor Command: "); // For Debugging
-   //Serial.print(control);
-   //Serial.println();
+   Serial.print("Volts Out MaxedL: "); // For debugging
+   Serial.print(u);
+   Serial.println();
+   control = (u / umax) * 243; // Making input between 0-255
+   Serial.print("Motor CommandL: "); // For Debugging
+   Serial.print(control);
+   Serial.println();
 
 
    er = rr - rightAng; // Error in rad
@@ -222,13 +200,13 @@ void loop() {
   //if (abs(ur) < 0.005) {
   //  ur = 0;
   // }
-   //Serial.print("Volts Out Maxed: "); // For debugging
-   //Serial.print(u);
-   //Serial.println();
+   Serial.print("Volts Out MaxedR: "); // For debugging
+   Serial.print(u);
+   Serial.println();
    controlr = (ur / umax) * 255; // Making input between 0-255
-   //Serial.print("Motor Command: "); // For Debugging
-   //Serial.print(control);
-   //Serial.println();
+   Serial.print("Motor CommandR: "); // For Debugging
+   Serial.print(control);
+   Serial.println();
     
    analogWrite(9, abs(control)); // Writing to motor
    digitalWrite(7, signbit(u)); // Writing direction to motor using sign of u
