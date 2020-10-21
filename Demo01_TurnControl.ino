@@ -22,6 +22,7 @@ double Kdr = 0.01;//0.1;//0.1; //.1; // V/(rad/sec)
 
 double rl = 0; // Desired radian left
 double rr = 0; // Desired radian right
+double r=0;
 int number = 0; // Data recieved
 double angVel = 0; // Current Velocity 
 double prePos = 0; // Previous Position
@@ -67,6 +68,8 @@ double er = 0;
 
 double angle = 0;
 double angleD = 180;
+
+boolean didTurn =false;
  
 void loop() {  
 
@@ -81,14 +84,34 @@ void loop() {
     if (angle > angleD) {
       angle = angleD;
     }
-     
+    if( (angle-angleD) < 0.1){
+      didTurn=true;
+    }
   }
+  
+  angle = angle * (3.14/180)
   //angle = 15;
 
-  rl = -(angle/360)*6.28;
-  rr = (angle/360)*6.28;
+  rl = -(angle/360)*13.25;
+  rr = (angle/360)*13;
   
+  if(didTurn){
+    rl=r;
+    rr=r
+     if (r > distance) {
+    r = distance;
+  }
 
+  if ((e < 0.2) && (er<0.2)){
+    if (r < distance) {
+      r = r + (12.0*0.5*6.283185307 / 16.5);
+    }
+    if (r > distance) {
+      r = distance;
+    }
+     
+  }
+  }
   
    Serial.print("RL : ");
    Serial.println(rl);
