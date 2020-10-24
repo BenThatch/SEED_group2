@@ -4,9 +4,9 @@ Group Members : Ben Thatcher, Gillian Yost, Chirs Hartsen, Dan Parr, Ruiqi Sun
 
 Summary of each file in main repository branch
 
-Demo01_StrightControl: Arduino sketch that is final Demo 1 code that takes a distance in feet and drives straight to that distance.
+Demo01_StrightControl: Arduino sketch that is final Demo 1 code that takes a distance in feet and drives straight to that distance using a PID Controller and ramp response.
 
-Demo01_TurnControl: Arduino sketch that is final Demo 1 code that takes an angle in degrees, moves to that angle and drives forward 1 foot.
+Demo01_TurnControl: Arduino sketch that is final Demo 1 code that takes an angle in degrees, moves to that angle and drives forward 1 foot using a PID Controller and ramp response.
 
 Demo1_ISR_rewrit.ino : an arduino sketch adapted from the code Ben Wrote for assignment 2, which moniterd the movement of a virtual robot according to how 2 encoders were moved, to moniter how our actual wheels are moving. Main advantage over use of Encoder library velocity calculation in ISR.
 
