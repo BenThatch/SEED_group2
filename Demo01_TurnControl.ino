@@ -1,8 +1,8 @@
 // SEED Lab Fall 2020
 // Group 2
-// Mini Project
-// This code reads in the quardrent value from the pi, and uses a PID Controller to turn
-// the wheel to the quadrent
+// Demo 1
+// This code takes an angle in degrees and will turn to that angle and move one foot forward
+
 
 #include <Encoder.h> // have to install encoder library see instructions on handout
 #include <Wire.h>
@@ -12,16 +12,18 @@
 
 Encoder knobLeft(2, 5);
 Encoder knobRight(3, 6);
-double Kpl = 4.0;    // V/rad
-double Kil = 0.02;// 0.08; //.1; // V/rad*sec
+// Constants for going straight
+double Kpl = 2.2;//4.0;    // V/rad
+double Kil = 0.025;// 0.08; //.1; // V/rad*sec
 double Kdl = 0; //0.1;//0.1; //.1; // V/(rad/sec)
 
-double Kpr = 3.5;    // V/rad
-double Kir = 0.03;//0.07; //.1; // V/rad*sec
+double Kpr = 2.2; //3.5;    // V/rad
+double Kir = 0.02;//0.07; //.1; // V/rad*sec
 double Kdr = 0;//0.1;//0.1; //.1; // V/(rad/sec)
 
 double rl = 0; // Desired radian left
 double rr = 0; // Desired radian right
+double r = 0;
 int number = 0; // Data recieved
 double angVel = 0; // Current Velocity 
 double prePos = 0; // Previous Position
@@ -60,35 +62,55 @@ double u = 0; // Output of PID Controller (V)
 double ur = 0;
 double control = 0; // Input to PWM waveform (0-255)
 double controlr = 0;
-double umax = 7.2; // Max voltage of battery and U)
-double distance = 12.0*10.0*6.283185307 / 16.5;
+double umax = 7.7; // Max voltage of battery and U)
+double distance = 12.0*6.28 / 18;
 double e = 0;
 double er = 0;
+bool toTurn = 1;
+bool toStraight = 0;
 
 double angle = 0;
 double angleD = 180;
  
 void loop() {  
+  if (toTurn) {
 
-  if (angle > angleD) {
-    angle = angleD;
-  }
-
-  if ((e < 0.2) && (er<0.2)){
-    if (angle < angleD) {
-      angle = angle + 15;
-    }
-    if (angle > angleD) {
+    if (abs(angle) > abs(angleD)) {
       angle = angleD;
     }
-     
-  }
-
-  //angle = 180;
-
-  rl = -(angle/360)*(12*3.14)*(2*3.14/19);
-  rr = (angle/360)*(12*3.14)*(2*3.14/19);
   
+    if ((e < 0.2) && (er<0.2)){
+      if (abs(angle) < abs(angleD)){
+        if (signbit(angleD)) {
+          angle = angle - 15;
+        } else {
+          angle = angle + 15;
+        }
+      }
+      if (abs(angle) > abs(angleD)) {
+        angle = angleD;
+      }
+       
+    }
+    rl = -(angle/360)*(11*3.14)*(2*3.14/19);
+    rr = (angle/360)*(11*3.14)*(2*3.14/19);
+  }
+  else {
+      if (r > distance) {
+      r = distance;
+    }
+  
+    if ((e < 0.2) && (er<0.2)){
+      if (r < distance) {
+        r = r + (12.0*0.2*6.283185307 / 16.5);
+      }
+      if (r > distance) {
+        r = distance;
+      }  
+    }
+    rl = r;
+    rr = r;
+  }
 
   
    Serial.print("RL : ");
@@ -165,7 +187,7 @@ void loop() {
    Serial.print("Volts Out MaxedL: "); // For debugging
    Serial.print(u);
    Serial.println();
-   control = (u / umax) * 243; // Making input between 0-255
+   control = (u / umax) * 255; // Making input between 0-255
    Serial.print("Motor CommandL: "); // For Debugging
    Serial.print(control);
    Serial.println();
@@ -203,7 +225,7 @@ void loop() {
    Serial.print("Volts Out MaxedR: "); // For debugging
    Serial.print(u);
    Serial.println();
-   controlr = (ur / umax) * 255; // Making input between 0-255
+   controlr = (ur / umax) * 230; // Making input between 0-255
    Serial.print("Motor CommandR: "); // For Debugging
    Serial.print(control);
    Serial.println();
@@ -214,7 +236,19 @@ void loop() {
    digitalWrite(8, signbit(ur)); // Writing direction to motor using sign of u
    Ts = (millis() - Tc)/1000; // Getting loop time
    Tc = millis(); // Getting current time
-   prePos = leftAng; // Current position becomes previous
+   //double radangleD
+   //Serial.println(angleD*(3.14/180));
+   if ((angle == angleD) && (abs(e) < 0.1) && (abs(er) < 0.1)) {
+    toTurn = 0;
+    if (!toTurn && !toStraight) {
+      knobLeft.write(0);
+      knobRight.write(0);
+      toStraight = 1;
+    }
+    Serial.print("TEST TEST TEST TEST TEST TEST");
+   }
+   Serial.print("To Turn: ");
+   Serial.println(toTurn);
    delay(LOOP_DELAY); // Delay loop
    
     
