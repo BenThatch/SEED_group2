@@ -18,5 +18,5 @@ PIDController_2Wheels.ino: Arduino sketch with PID controller updated from mini-
 
 Testcode_10_16.ino: combonation of the above listed arduino scripts to estimate position of the robot
 
-angle_detection.py: Python code for raspberry pi to detect angle of aruco marker. The angle is positive it to left and negative to the right. 
+angle_detection.py: Python code for raspberry pi to detect angle of aruco marker. The angle is positive it to left and negative to the right. Prints angle to LCD screen.
 
