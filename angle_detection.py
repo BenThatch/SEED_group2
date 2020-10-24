@@ -35,6 +35,24 @@ import cv2 as cv
 import numpy as np
 import cv2.aruco as aruco
 from fractions import Fraction
+import board
+import busio
+import adafruit_character_lcd.character_lcd_rgb_i2c as character_lcd
+
+# Modify this if you have a different sized Character LCD
+lcd_columns = 16
+lcd_rows = 2
+
+# Initialise I2C bus.
+i2c = busio.I2C(board.SCL, board.SDA)
+
+# Initialise the LCD class
+lcd = character_lcd.Character_LCD_RGB_I2C(i2c, lcd_columns, lcd_rows)
+
+lcd.clear()
+# Set LCD color to red
+lcd.color = [100, 0, 0]
+time.sleep(1)
 
 #Function to return the quadrant that the Aruco marker is in:
 def marker_angle(image):
@@ -83,6 +101,14 @@ def main():
     while(1): #infinite loop
         angle = take_picture() #capture image and determine quadrant of Aruco marker
         print(angle)
+        if(angle == None):
+            lcd.message="None";
+            
+        else:
+             lcd.message= str(angle);
+            
+        time.sleep(2)        
+        lcd.clear();       
         time.sleep(2) #adjust this to fit within time constraints of problem
 
 main()
