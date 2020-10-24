@@ -12,7 +12,8 @@ Demo1_ISR_rewrit.ino : an arduino sketch adapted from the code Ben Wrote for ass
 
 
 PIDController.ino: Arduino sketch with PID controller from mini-project adjsuted to drive 2 motors for both wheels of the robot
-PIDController.ino: Arduino sketch with PID controller updated from mini-project for 2 motors and a ramp response instead of step response.
+
+PIDController_2Wheels.ino: Arduino sketch with PID controller updated from mini-project for 2 motors and a ramp response instead of step response.
 
 Testcode_10_16.ino: combonation of the above listed arduino scripts to estimate position of the robot
 
