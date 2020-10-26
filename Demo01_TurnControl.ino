@@ -73,7 +73,6 @@ double angle = 0;
 double angleD = 180;
  
 void loop() {  
-  angleD = angleD % 360;
   if (angleD > 180) {
     angleD = angleD - 360;
   }
