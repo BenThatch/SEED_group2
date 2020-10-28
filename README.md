@@ -16,7 +16,7 @@ PIDController.ino: Arduino sketch with PID controller from mini-project adjsuted
 
 PIDController_2Wheels.ino: Arduino sketch with PID controller updated from mini-project for 2 motors and a ramp response instead of step response.
 
-Testcode_10_16.ino: combonation of the above listed arduino scripts to estimate position of the robot
+Testcode_10_16.ino: combonation of  Demo1_ISR_rewrit and Demo01_motor_driver above listed arduino scripts to estimate position of the robot
 
 angle_detection.py: Python code for raspberry pi to detect angle of aruco marker. The angle is positive it to left and negative to the right. Prints angle to LCD screen.
 
