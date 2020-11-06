@@ -48,7 +48,8 @@ from fractions import Fraction
 def dist_and_angle(image):
     fov = 62.2 #Pi camera horizontal field of view in degrees, from camera specs
     f_exp = 1488 #focal length (pixels); determined through triangulation
-    markerLength = 165 #side length of my printed aruco marker is 165mm long
+    #markerLength = 165 #side length of my printed aruco marker is 165mm long
+    markerLength = 60 #side length (mm) of aruco marker used in Demo 2
     img = cv.imread(image) #read image
     aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250) #dictionary of Aruco markers
     param = aruco.DetectorParameters_create() #default detection parameters
@@ -117,7 +118,7 @@ def main():
     while(1): #infinite loop
         position = take_picture() #capture image and determine quadrant of Aruco marker
         print(position)
-        time.sleep(1) #adjust this to fit within time constraints of problem
+        time.sleep(0.5) #adjust this to fit within time constraints of problem
 
 main()
 
