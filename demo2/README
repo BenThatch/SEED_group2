@@ -3,6 +3,10 @@
 
 Group Members : Ben Thatcher, Gillian Yost, Chirs Hartsen, Dan Parr, Ruiqi Sun
 
+A summary of all files contained in this folder:
 
+test_Circle.ino: Arduino script that tests the motion of the robot in a cirle
+
+angle_distance.py: python script that returns the angle and distance from the robot to an aruco marker
 
 
