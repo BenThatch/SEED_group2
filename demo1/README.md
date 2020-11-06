@@ -1,8 +1,8 @@
-# SEED_group2
+# SEED_group2 demo 1
 
 Group Members : Ben Thatcher, Gillian Yost, Chirs Hartsen, Dan Parr, Ruiqi Sun
 
-Summary of each file in main repository branch
+Summary of each file in demo1 repository folder
 
 Demo01_StrightControl: Arduino sketch that is final Demo 1 code that takes a distance in feet and drives straight to that distance using a PID Controller and ramp response.
 
