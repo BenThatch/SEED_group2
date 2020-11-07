@@ -12,13 +12,15 @@ time.sleep in the main function to fit within given time constraints.
 
 This script contains three functions. The function 'dist_and_angle' reads an
 image and determines if there is an Aruco marker in the image. If there is
-an Aruco marker present, the function returns a vector with the distance to
-the marker and the angle in degrees between the camera axis and the beacon.
+an Aruco marker present, the function returns 3 values: 1) the distance to
+the marker in mm, 2) the whole number value of the angle in degrees, 3) the
+decimal value of the angle to 2 decimal places.
 If no Aruco marker is found, return None.
 If Aruco is in left half of image, the angle returned is positive.
 If Aruco is in right half of image, the angle returned is negative.
-The angle is the first element in the vector.
-The distance (in mm) is the second element in the vector.
+The whole number part of the angle is the first returned value.
+The decimal part of the angle is the second returned value.
+The distance (in mm) is the third returned value.
 To show the image on screen for troubleshooting, uncomment the 3 lines of code
 above the outer 'if' statement.
 
@@ -29,8 +31,7 @@ The image is a jpg but can be changed to png if needed.
 
 The function 'main' initiates an infinite loop, so that the camera
 continuously takes a picture, detects the presence of an Aruco marker, and
-returns a vector containing the angle between the camera axis and the beacon
-as well as the distance in mm to the beacon.
+returns the 3 values from the 'dist_and_angle' function.
 
 To run this script, connect a camera to the Raspberry Pi and run the module.
 """
@@ -48,8 +49,9 @@ from fractions import Fraction
 def dist_and_angle(image):
     fov = 62.2 #Pi camera horizontal field of view in degrees, from camera specs
     f_exp = 1488 #focal length (pixels); determined through triangulation
-    #markerLength = 165 #side length of my printed aruco marker is 165mm long
     markerLength = 60 #side length (mm) of aruco marker used in Demo 2
+    #f_exp = 1525 #focal length for a different camera
+    #markerLength = 165 #side length of my printed aruco marker is 165mm long
     img = cv.imread(image) #read image
     aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250) #dictionary of Aruco markers
     param = aruco.DetectorParameters_create() #default detection parameters
@@ -73,6 +75,8 @@ def dist_and_angle(image):
         #determine the angle to the marker
         markerCenterX = (corners[0][0][0][0] + corners[0][0][1][0] + corners[0][0][2][0] + corners[0][0][3][0])/4
         beaconAngle = ((imgCenterX-markerCenterX)/imgCenterX)*(fov/2)
+        wholeAngle = int(beaconAngle)
+        decimalAngle = int(round((beaconAngle - wholeAngle) * 100))
         #pixel vertices of marker:
         Xvertex0 = corners[0][0][0][0]
         Xvertex1 = corners[0][0][1][0]
@@ -94,8 +98,10 @@ def dist_and_angle(image):
         #determine distance to object
         distance_x = (f_exp*markerLength)/(pixelWidthAvgX) #using triangulation
         distance_y = (f_exp*markerLength)/(pixelWidthAvgY) #using triangulation
-        distance = (distance_x + distance_y)/2
-    return [beaconAngle,distance]
+        distance = int((distance_x + distance_y)/2)
+        
+    return wholeAngle, decimalAngle, distance
+    #return beaconAngle, wholeAngle,decimalAngle,distance
     #return [beaconAngle,distance,distance_x,distance_y,pixelWidthAvgX,pixelWidthAvgY] #used in testing
 
 
@@ -117,7 +123,13 @@ def take_picture():
 def main():
     while(1): #infinite loop
         position = take_picture() #capture image and determine quadrant of Aruco marker
-        print(position)
+        #print(position)
+        wholeAngle = position[0]
+        decimalAngle = position[1]
+        distance = position[2]
+        print(wholeAngle)
+        print(decimalAngle)
+        print(distance)
         time.sleep(0.5) #adjust this to fit within time constraints of problem
 
 main()
