@@ -66,13 +66,9 @@ double er = 0;
  
 void loop() {  
 
-  if (rr > distance) {
-    rr = distance;
-  }
-
   if ((e < 0.2) && (er<0.2)){
     if (rr < distance) {
-      rr = rr + (2*2.5*6.283185307 / (18.2));
+      rr = rr + (2*2.5*6.283185307 / (18.2)); // increment * scale factor between inner circle and outer circle * inches to radian conversion
     }
     if (rl < (distance/2.5)) {
       rl = rl + (2*1*6.283185307 / (18.2));
