@@ -13,17 +13,17 @@
 Encoder knobLeft(2, 5);
 Encoder knobRight(3, 6);
 // Constants for going straight
-double Kpl = 2.2;//4.0;    // V/rad
-double Kil = 0.025;// 0.08; //.1; // V/rad*sec
-double Kdl = 0; //0.1;//0.1; //.1; // V/(rad/sec)
+double Kpl = 2.2;   // V/rad
+double Kil = 0.025; // V/rad*sec
+double Kdl = 0; // V/(rad/sec)
 
-double Kpr = 2.2; //3.5;    // V/rad
-double Kir = 0.02;//0.07; //.1; // V/rad*sec
-double Kdr = 0;//0.1;//0.1; //.1; // V/(rad/sec)
+double Kpr = 2.2; // V/rad
+double Kir = 0.02; // V/rad*sec
+double Kdr = 0; // V/(rad/sec)
 
 double rl = 0; // Desired radian left
 double rr = 0; // Desired radian right
-double r = 0;
+double r = 0; // Desired going forward
 int input1;
 int input2;
 int input3;
@@ -33,6 +33,7 @@ double distancePI;
 double angVel = 0; // Current Velocity 
 double prePos = 0; // Previous Position
 int speedR=230;
+
 void setup() {
   // put your setup code here, to run once:
   // Setting up motor control pins
@@ -47,7 +48,7 @@ void setup() {
   // initialize i2c as slave
   Wire.begin(SLAVE_ADDRESS);
   // define callbacks for i2c communication
-  Wire.onReceive(receiveData);
+  //Wire.onReceive(receiveData);
   //Wire.onRequest(sendData); 
   delay(1000);
 }
@@ -70,24 +71,140 @@ double control = 0; // Input to PWM waveform (0-255)
 double controlr = 0;
 double umax = 7.7; // Max voltage of battery and U)
 double distance = 12.0*6.28 / 18;
-double e = 0;
-double er = 0;
-bool toTurn = 1;
-bool toStraight1 = 0;
-bool toStraight2 =0;
-bool toCircle=0;
+double e = 0; // error left
+double er = 0; // error right
+bool toTurn = 1; // bool for turning
+bool toStraight1 = 0; // bool for going straight and reseting encoder
+bool toStraight2 =0; // bool for going staight and reseting encoder
+bool toCircle=0; // bool for circling
 
 
-double angle = 0;
-double angleD = 180;
+double angle = 0; // current angle desired
+double angleD = 180; // desired angle total
  
 void loop() {  
 
-
-  
+  // If bool to turn and not to circle turn
   if (toTurn && !toCircle) {
 
-//    if (Wire.available()) {
+      turn();
+
+  }
+  // else if not to circle and not toturn go straight
+  else if (!toCircle){
+      straight();
+  }
+  // if go circle and go turn, turn 90 degrees to set up circle
+  if(toCircle && toTurn){
+    turn90();
+  }
+  // else if not turn and to circle then drive in a circle
+  else if (!toTurn && toCircle){
+    circle();
+  }
+
+  
+   long newLeft; // new postion
+   newLeft=knobLeft.read(); // Read in position count
+   double leftAng =  -1.0*(double)newLeft * 6.28 / 3200; // calulation of angular position (rad)
+
+   long newRight; // new postion
+   newRight=knobRight.read(); // Read in position count
+   double rightAng =  (double)newRight * 6.28 / 3200; // calulation of angular position (rad)
+
+
+    // reset both back to zero.
+  if (Serial.available()) {
+    Serial.read();
+    Serial.println("Reset both knobs to zero");
+    knobLeft.write(0);
+    knobRight.write(0);
+  }
+
+   e = rl - leftAng; // Error in rad
+
+   if (Ts > 0) {
+     D = (e - ePast)/Ts; // rad/sec Derivative 
+     ePast = e;
+   }
+   else {
+     D = 0; // rad/sec
+   }
+   I = I + Ts*e; // Rad*s
+   u = Kpl*e + Kil*I + Kdl*D; // (V/rad) * rad + (V/rad*sec) * (rad/sec) + (V/(rad/sec)) * (rad/sec)
+
+   // u cannot be larger than umax, but must maintain sign
+   if (abs(u) > umax) {
+    if (signbit(u)){
+      u = -umax;
+    } else {
+      u = umax;
+    }
+   }
+   control = (u / umax) * 255; // Making input between 0-255
+
+
+   er = rr - rightAng; // Error in rad
+
+   if (Ts > 0) {
+     Dr = (er - erPast)/Ts; // rad/sec Derivative 
+     erPast = er;
+   }
+   else {
+     Dr = 0; // rad/sec
+   }
+   Ir = Ir + Ts*er; // Rad*s
+   ur = Kpr*er + Kir*Ir + Kdr*Dr; // (V/rad) * rad + (V/rad*sec) * (rad/sec) + (V/(rad/sec)) * (rad/sec)
+
+
+   // u cannot be larger than umax, but must maintain sign
+   if (abs(ur) > umax) {
+    if (signbit(ur)){
+      ur = -umax;
+    } else {
+      ur = umax;
+    }
+
+
+   controlr = (ur / umax) * speedR; // Making input between 0-255
+
+    
+   analogWrite(9, abs(control)); // Writing to motor
+   digitalWrite(7, signbit(u)); // Writing direction to motor using sign of u
+   analogWrite(10, abs(controlr)); // Writing to motor
+   digitalWrite(8, signbit(ur)); // Writing direction to motor using sign of u
+   Ts = (millis() - Tc)/1000; // Getting loop time
+   Tc = millis(); // Getting current time
+   
+
+   if ((angle == angleD) && (abs(e) < 0.2) && (abs(er) < 0.2)) {
+     toTurn = 0;
+     if (!toTurn && !toStraight1) {
+        knobLeft.write(0);
+        knobRight.write(0);
+        toStraight1 = 1;
+     }
+   }
+
+    if ((r == distance) && (abs(e) < 0.2) && (abs(er) < 0.2)) {
+      toCircle = 1;
+      if (toCircle && !toStraight2) {
+        knobLeft.write(0);
+        knobRight.write(0);
+        speedR=240;
+        toTurn=1;
+        toStraight2 = 1;
+    }
+   }
+
+   delay(LOOP_DELAY); // Delay loop
+   
+    
+  } // End loop
+}
+
+void turn() {
+  //    if (Wire.available()) {
 //      angleD = anglePI;
 //      distance = (((double)input3*0.0393701)-6.0)*6.28/18;
 //    }
@@ -111,9 +228,11 @@ void loop() {
     }
     rl = -(angle/360)*(11*3.14)*(2*3.14/19);
     rr = (angle/360)*(11*3.14)*(2*3.14/19);
-  }
-  else if (!toCircle){
-      if (r > distance) {
+}
+
+
+void straight() {
+   if (r > distance) {
       r = distance;
     }
   
@@ -127,10 +246,10 @@ void loop() {
     }
     rl = r;
     rr = r;
-  }
+}
 
-  if(toCircle && toTurn){
-    angleD=90;
+void turn90() {
+  angleD=90;
     if (abs(angle) > abs(angleD)) {
       angle = angleD;
     }
@@ -150,10 +269,10 @@ void loop() {
     }
     rl = -(angle/360)*(11*3.14)*(2*3.14/19);
     rr = (angle/360)*(11*3.14)*(2*3.14/19);
-  
-  }
-  else if (!toTurn && toCircle){
-    distance=125.2*6.283185307 / (18.2);
+}
+
+void circle() {
+  distance=125.2*6.283185307 / (18.2);
     if (rr > distance) {
     rr = distance;
   }
@@ -173,161 +292,7 @@ void loop() {
     }
      
   }
-  }
-
-  
-//   Serial.print("RL : ");
-//   Serial.println(rl);
-//
-//   Serial.print("RR : ");
-//   Serial.println(rr);
-   
-   //Serial.println(r); // Remove later
-   long newLeft; // new postion
-   newLeft=knobLeft.read(); // Read in position count
-   double leftAng =  -1.0*(double)newLeft * 6.28 / 3200; // calulation of angular position (rad)
-
-   long newRight; // new postion
-   newRight=knobRight.read(); // Read in position count
-   double rightAng =  (double)newRight * 6.28 / 3200; // calulation of angular position (rad)
-
-//   Serial.print("Left: ");
-//   Serial.print(leftAng);
-//   //Serial.println();
-//
-//   Serial.print(" Right: ");
-//   Serial.print(rightAng);
-//   Serial.println();
-
-    // reset both back to zero.
-  if (Serial.available()) {
-    Serial.read();
-    Serial.println("Reset both knobs to zero");
-    knobLeft.write(0);
-    knobRight.write(0);
-  }
-    // Output data to plot in Matlab to compare to simulated function
-    //Serial.print(micros());
-    //Serial.print(",");
-    //Serial.print(leftAng);
-    //Serial.print(",");
-    //angVel = (leftAng - prePos)/Ts;
-    //Serial.print(angVel);
-    //Serial.println();
-    
-    //Serial.println(number); // For debugging
-    //Serial.println();
-
-   e = rl - leftAng; // Error in rad
-   //Serial.print("Error: ");
-   //Serial.println(e);
-   if (Ts > 0) {
-     D = (e - ePast)/Ts; // rad/sec Derivative 
-     ePast = e;
-   }
-   else {
-     D = 0; // rad/sec
-   }
-   I = I + Ts*e; // Rad*s
-   u = Kpl*e + Kil*I + Kdl*D; // (V/rad) * rad + (V/rad*sec) * (rad/sec) + (V/(rad/sec)) * (rad/sec)
-   // Final Units from above is only V
-   //Serial.print("Volts Out Unmaxed: ");
-   //Serial.print(u);
-   //Serial.println();
-
-   // u cannot be larger than umax, but must maintain sign
-   if (abs(u) > umax) {
-    if (signbit(u)){
-      u = -umax;
-    } else {
-      u = umax;
-    }
-   }
-  // If u is very close to zero, make zero because using doubles
-  //if (abs(u) < 0.005) {
-  //  u = 0;
-  // }
-//   Serial.print("Volts Out MaxedL: "); // For debugging
-//   Serial.print(u);
-//   Serial.println();
-   control = (u / umax) * 255; // Making input between 0-255
-//   Serial.print("Motor CommandL: "); // For Debugging
-//   Serial.print(control);
-//   Serial.println();
-
-
-   er = rr - rightAng; // Error in rad
-   //Serial.print("Error: ");
-   //Serial.println(e);
-   if (Ts > 0) {
-     Dr = (er - erPast)/Ts; // rad/sec Derivative 
-     erPast = er;
-   }
-   else {
-     Dr = 0; // rad/sec
-   }
-   Ir = Ir + Ts*er; // Rad*s
-   ur = Kpr*er + Kir*Ir + Kdr*Dr; // (V/rad) * rad + (V/rad*sec) * (rad/sec) + (V/(rad/sec)) * (rad/sec)
-   // Final Units from above is only V
-   //Serial.print("Volts Out Unmaxed: ");
-   //Serial.print(u);
-   //Serial.println();
-
-   // u cannot be larger than umax, but must maintain sign
-   if (abs(ur) > umax) {
-    if (signbit(ur)){
-      ur = -umax;
-    } else {
-      ur = umax;
-    }
-   }
-  // If u is very close to zero, make zero because using doubles
-  //if (abs(ur) < 0.005) {
-  //  ur = 0;
-  // }
-//   Serial.print("Volts Out MaxedR: "); // For debugging
-//   Serial.print(u);
-//   Serial.println();
-   controlr = (ur / umax) * speedR; // Making input between 0-255
-//   Serial.print("Motor CommandR: "); // For Debugging
-//   Serial.print(control);
-//   Serial.println();
-    
-   analogWrite(9, abs(control)); // Writing to motor
-   digitalWrite(7, signbit(u)); // Writing direction to motor using sign of u
-   analogWrite(10, abs(controlr)); // Writing to motor
-   digitalWrite(8, signbit(ur)); // Writing direction to motor using sign of u
-   Ts = (millis() - Tc)/1000; // Getting loop time
-   Tc = millis(); // Getting current time
-   //double radangleD
-   //Serial.println(angleD*(3.14/180));
-   if ((angle == angleD) && (abs(e) < 0.2) && (abs(er) < 0.2)) {
-    toTurn = 0;
-    if (!toTurn && !toStraight1) {
-      knobLeft.write(0);
-      knobRight.write(0);
-      toStraight1 = 1;
-    }
-    //Serial.print("TEST TEST TEST TEST TEST TEST");
-   }
-
-    if ((r == distance) && (abs(e) < 0.2) && (abs(er) < 0.2)) {
-      toCircle = 1;
-      if (toCircle && !toStraight2) {
-        knobLeft.write(0);
-        knobRight.write(0);
-        speedR=240;
-        toTurn=1;
-        toStraight2 = 1;
-    }
-    //Serial.print("TEST TEST TEST TEST TEST TEST");
-   }
-//   Serial.print("To Turn: ");
-//   Serial.println(toTurn);
-   delay(LOOP_DELAY); // Delay loop
-   
-    
-} // End loop
+}
 
 int stop = 0;
 
