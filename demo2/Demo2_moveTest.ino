@@ -164,6 +164,7 @@ void loop() {
     } else {
       ur = umax;
     }
+   }
 
 
    controlr = (ur / umax) * speedR; // Making input between 0-255
@@ -201,7 +202,7 @@ void loop() {
    
     
   } // End loop
-}
+
 
 void turn() {
   //    if (Wire.available()) {
