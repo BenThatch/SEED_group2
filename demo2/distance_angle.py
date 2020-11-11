@@ -44,6 +44,37 @@ import cv2 as cv
 import numpy as np
 import cv2.aruco as aruco
 from fractions import Fraction
+import smbus
+import serial
+
+#setup for serial communication
+ser = serial.Serial('/dev/ttyACM0', 115200)
+#Wait for connection to complete
+time.sleep(3)
+
+# I2C channel 1 is connected to the GPIO pins
+#channel = 1
+
+#  MCP4725 defaults to address 0x60
+#address = 0x04
+
+# Register addresses (with "normal mode" power-down bits)
+#reg_write_dac = 0x40
+
+# Initialize I2C (SMBus)
+#bus = smbus.SMBus(channel)
+
+
+#Function to read serial
+def ReadfromArduino():
+    while (ser.in_waiting > 0):
+        try:
+            line = ser.readline().decode('utf-8').rstrip()
+            print("serial output : ", line)
+        except:
+            print("Communication Error")
+
+
 
 #Function to return the quadrant that the Aruco marker is in:
 def dist_and_angle(image):
@@ -75,8 +106,8 @@ def dist_and_angle(image):
         #determine the angle to the marker
         markerCenterX = (corners[0][0][0][0] + corners[0][0][1][0] + corners[0][0][2][0] + corners[0][0][3][0])/4
         beaconAngle = ((imgCenterX-markerCenterX)/imgCenterX)*(fov/2)
-        wholeAngle = int(beaconAngle)
-        decimalAngle = int(round((beaconAngle - wholeAngle) * 100))
+        #wholeAngle = int(beaconAngle)
+        #decimalAngle = int(round((beaconAngle - wholeAngle) * 100))
         #pixel vertices of marker:
         Xvertex0 = corners[0][0][0][0]
         Xvertex1 = corners[0][0][1][0]
@@ -98,9 +129,13 @@ def dist_and_angle(image):
         #determine distance to object
         distance_x = (f_exp*markerLength)/(pixelWidthAvgX) #using triangulation
         distance_y = (f_exp*markerLength)/(pixelWidthAvgY) #using triangulation
-        distance = int((distance_x + distance_y)/2)
+        distance = 0.0393701*(distance_x + distance_y)/2
+        distanceinch = int(distance)
+        #distanceWhole = int(distanceinch)
+        #distanceFract = int(round((distance - distanceWhole)*100))
+    return beaconAngle, distance
         
-    return wholeAngle, decimalAngle, distance
+    #return wholeAngle, decimalAngle, distanceWhole, distanceFract #round(distance/10)
     #return beaconAngle, wholeAngle,decimalAngle,distance
     #return [beaconAngle,distance,distance_x,distance_y,pixelWidthAvgX,pixelWidthAvgY] #used in testing
 
@@ -124,12 +159,30 @@ def main():
     while(1): #infinite loop
         position = take_picture() #capture image and determine quadrant of Aruco marker
         #print(position)
-        wholeAngle = position[0]
-        decimalAngle = position[1]
-        distance = position[2]
-        print(wholeAngle)
-        print(decimalAngle)
-        print(distance)
+        if(position != None):
+            angleSend= "A"+ str(position[0])
+            distanceSend="D"+str(position[1]) + "\n"
+            PositionAndAngleData= angleSend + distanceSend
+            ser.write(PositionAndAngleData.encode())
+            time.sleep(0.1)
+            print(angleSend +" " + distanceSend)
+            time.sleep(0.1)
+            ReadfromArduino()
+        
+        
+        #wholeAngle = position[0]
+        #decimalAngle = position[1]
+        #distanceWhole = position[2]
+        #distanceFract = position[3]
+        #print(wholeAngle)
+        #print(decimalAngle)
+        #print(distanceWhole)
+        #print(distanceFract)
+        #bus.write_i2c_block_data(address, reg_write_dac, [wholeAngle , decimalAngle])
+        #bus.write_i2c_block_data(address, reg_write_dac, [decimalAngle])
+        #bus.write_i2c_block_data(address, reg_write_dac, [distanceWhole, distanceFract])
+        #bus.write_byte(address, distanceWhole)
+        #bus.write_byte(address, distanceFract)
         time.sleep(0.5) #adjust this to fit within time constraints of problem
 
 main()
