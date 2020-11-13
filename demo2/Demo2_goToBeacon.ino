@@ -1,7 +1,7 @@
 // SEED Lab Fall 2020
 // Group 2
 // Demo 2
-// This code turns until it locates an aruco marker, drives to within 1 foot of it, and then drives in a circle around it
+// This code drives to within 1 foot of a detected aruco marker
 
 
 #include <Encoder.h> // have to install encoder library see instructions on handout
@@ -26,7 +26,7 @@ double rr = 0; // Desired radian right
 double r = 0; // Desired going forward
 double angVel = 0; // Current Velocity 
 double prePos = 0; // Previous Position
-int speedR=230; //right wheel speed limit
+int speedR=230; // speed limit for right wheel
 
 void setup() {
   // put your setup code here, to run once:
@@ -38,7 +38,7 @@ void setup() {
   pinMode(10, OUTPUT);
   digitalWrite(4, HIGH);
   pinMode(12, INPUT);
-  Serial.begin(115200);
+  Serial.begin(115200); 
   delay(3000);
 }
 
@@ -46,64 +46,58 @@ long postitionLeft =-999;
 long postitionRight =-999;
 long leftAng = 0;
 long rightAng = 0;
-double I = 0; // Integral left wheel
-double Ir = 0; // Integral right wheel
-double D = 0; // Derivative left wheel
-double Dr = 0; // Derivative right wheel
-double ePast = 0; // Past error left wheel
-double erPast = 0; // Past error right wheel
+double I = 0; // Integral for left wheel
+double Ir = 0; // integral for right wheel
+double D = 0; // Derivative for left wheel
+double Dr = 0; // Derivative for right wheel
+double ePast = 0; // Past error for left wheel
+double erPast = 0; // Past error for right wheel
 double Ts = 0; // Passed Time
 double Tc = millis(); // Current time
-double u = 0; // Output of PID Controller (V) left wheel
-double ur = 0; // Output of PID Controller (V) right wheel
-double control = 0; // Input to PWM waveform (0-255) left wheel
-double controlr = 0; // Input to PWM waveform (0-255) right wheel
-double umax = 8.4; // Max voltage of battery and U)
-double distance = 12.0*6.28 / 18; // desired distance for going straight
+double u = 0; // Output of PID Controller (V) for left wheel
+double ur = 0; // Output of PID Controller (V) for right wheel
+double control = 0; // Input to PWM waveform (0-255) for left wheel
+double controlr = 0; // Input to PWM waveform (0-255) for right wheel
+double umax = 8.0; // Max voltage of battery and U)
+double distance = 12.0*6.28 / 18; // how far the robot goes straight (updated from Pi)
 double e = 0; // error left
 double er = 0; // error right
 bool toTurn = 1; // bool for turning
 bool toStraight1 = 0; // bool for going straight and reseting encoder
 bool toStraight2 =0; // bool for going staight and reseting encoder
-bool toCircle=0; // bool for circling
 
 
 double angle = 0; // current angle desired
 double angleD = 360; // desired angle total
 
-double angleReceived=0; // angle received from Pi
-double distanceReceived=0; // distance received from Pi
-int endAng=0;
-String PositionAndAngleData; // string received from serial
-bool dataReceived=0; // data received boolean
+double angleReceived=0; //angle received from Pi
+double distanceReceived=0; //distance received from Pi
+int endAng=0; 
+String PositionAndAngleData; //string received from Pi along serial
+bool dataReceived=0; // received data boolean
  
 void loop() {  
 
 
-  // If bool to turn and not to circle and not data receieved, turn
-  if (toTurn && !toCircle && !dataReceived) {
+  //Serial.println(PositionAndAngleData);
+
+  // If bool to turn and not data received turn
+  if (toTurn && !dataReceived) {
 
       turn();
 
   }
-  // else if to turn and not to circle and data received, turn to angle given by Pi
-  else if(toTurn && !toCircle && dataReceived) {
+  // else if data is received, turn to data received
+  else if(toTurn && dataReceived) {
     angleD=angleReceived;
     
     turn();
   }
-  // else if not to circle and data received go straight
-  else if (!toCircle && dataReceived){
+  // else if not toturn go straight
+  else if (dataReceived){
       straight();
   }
-  // if to circle and to turn, turn 90 degrees to set up circle
-  if(toCircle && toTurn){
-    turn90();
-  }
-  // else if not turn and to circle and data received then drive in a circle
-  else if (!toTurn && toCircle && dataReceived){
-    circle();
-  }
+
 
   
    long newLeft; // new postion
@@ -172,8 +166,8 @@ void loop() {
    Ts = (millis() - Tc)/1000; // Getting loop time
    Tc = millis(); // Getting current time
    
-   //Once robot finishes turning, reset encoders and go straight
-   if ((angle == angleD) && (abs(e) < 0.35) && (abs(er) < 0.35)) {
+   // once it turns to desired angle, reset encoder and go straight
+   if ((angle == angleD) && (abs(e) < 0.3) && (abs(er) < 0.3)) {
      toTurn = 0;
      if (!toTurn && !toStraight1) {
         knobLeft.write(0);
@@ -181,19 +175,9 @@ void loop() {
         toStraight1 = 1;
      }
    }
-    //Once robot finishes going straight, reset encoders and go in circle or turn 90 degrees
-    if ((r == distance) && (abs(e) < 0.2) && (abs(er) < 0.2)) {
-      toCircle = 1;
-      if (toCircle && !toStraight2) {
-        knobLeft.write(0);
-        knobRight.write(0);
-        speedR=240;
-        toTurn=1;
-        toStraight2 = 1;
-    }
-   }
 
-    // recieves data from serial one time
+
+    // receives data from serial once
     if (Serial.available()>0) {
     if(!dataReceived){
       PositionAndAngleData = Serial.readStringUntil('\n');
@@ -208,7 +192,7 @@ void loop() {
   
   
 
-       // convert PositionAndAngleData from string to an int, then converts int to a double
+       // convert PositionAndAngleData from string to an int, then change int to doubles
     int i=0;
     if (dataReceived==1){
       while (PositionAndAngleData[i] != 'D'){ 
@@ -229,7 +213,7 @@ void loop() {
   } // End loop
 
 
-//This function makes the robot turn a desired angle using a ramp response
+//This function turns to desired angle using ramp response
 void turn() {
   //Serial.println("TURN");
     if (abs(angle) > abs(angleD)) {
@@ -254,7 +238,7 @@ void turn() {
 }
 
 
-//This function moves the robot straight to a desired distance with a ramp response
+//This function moves to desired distance using ramp response
 void straight() {
   distance=((distanceReceived*6.28/18) - 2);
    if (r > distance) {
@@ -271,52 +255,4 @@ void straight() {
     }
     rl = r;
     rr = r;
-}
-
-//This function turns 90 degress to the right using a ramp response
-void turn90() {
-  angleD=-90;
-    if (abs(angle) > abs(angleD)) {
-      angle = angleD;
-    }
-  
-    if ((e < 0.3) && (er<0.3)){
-      if (abs(angle) < abs(angleD)){
-        if (signbit(angleD)) {
-          angle = angle - 15;
-        } else {
-          angle = angle + 15;
-        }
-      }
-      if (abs(angle) > abs(angleD)) {
-        angle = angleD;
-      }
-       
-    }
-    rl = -(angle/360)*(11*3.14)*(2*3.14/19);
-    rr = (angle/360)*(11*3.14)*(2*3.14/19);
-}
-
-//This function moves robot in circle, using ramp response
-void circle() {
-  distance=138.2*6.283185307 / (18.2); //125.2*6.283185307 / (18.2)
-    if (rr > distance - 8.55) {
-    rr = distance - 8.55;
-  }
-
-  if ((e < 0.2) && (er<0.2)){
-    if (rr < distance - 8.55) {
-      rr = rr + (2*2.5*6.283185307 / (18.2));
-    }
-    if (rl < (distance/2.5)) {
-      rl = rl + (2*1*6.283185307 / (18.2));
-    }
-    if (rr > distance - 8.55) {
-      rr = distance - 8.55;
-    }
-    if (rl > (distance/2.5)) {
-      rl = (distance/2.5);
-    }
-     
-  }
 }
