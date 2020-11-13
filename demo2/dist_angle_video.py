@@ -33,9 +33,24 @@ import time
 import cv2 as cv
 import numpy as np
 import cv2.aruco as aruco
+import serial
+
+#setup for serial communication
+ser = serial.Serial('/dev/ttyACM0', 115200)
+#Wait for connection to complete
+time.sleep(3)
+
+#Function to read serial
+def ReadfromArduino():
+    while (ser.in_waiting > 0):
+        try:
+            line = ser.readline().decode('utf-8').rstrip()
+            print("serial output : ", line)
+        except:
+            print("Communication Error")
 
 fov = 62.2 #Pi camera horizontal field of view in degrees, from camera specs
-f_len = 1488 #focal length (pixels); determined through triangulation
+f_len = 586#focal length (pixels); determined through triangulation
 markerLength = 60 #side length (mm) of aruco marker used in Demo 2
 #f_len = 615 #focal length for a different camera
 #markerLength = 165 #side length of my printed aruco marker is 165mm long
@@ -57,10 +72,10 @@ while(1):
     #determine the angle to the marker
         markerCenterX = (corners[0][0][0][0] + corners[0][0][1][0] + corners[0][0][2][0] + corners[0][0][3][0])/4
         beaconAngle = ((imgCenterX-markerCenterX)/imgCenterX)*(fov/2)
-        wholeAngle = int(beaconAngle)
-        decimalAngle = int(round((beaconAngle - wholeAngle) * 100))
-        if decimalAngle < 0:
-            decimalAngle = decimalAngle * -1
+#        wholeAngle = int(beaconAngle)
+#        decimalAngle = int(round((beaconAngle - wholeAngle) * 100))
+#        if decimalAngle < 0:
+#            decimalAngle = decimalAngle * -1
     #pixel vertices of marker:
         Xvertex0 = corners[0][0][0][0]
         Xvertex1 = corners[0][0][1][0]
@@ -82,9 +97,18 @@ while(1):
     #determine distance to object
         distance_x = (f_len*markerLength)/(pixelWidthAvgX) #using triangulation
         distance_y = (f_len*markerLength)/(pixelWidthAvgY) #using triangulation
-        distance = int((distance_x + distance_y)/2)
-        print(wholeAngle, decimalAngle, distance)
-        print(pixelWidthAvgX, pixelWidthAvgY)
+        distance = 0.0393701*(distance_x + distance_y)/2
+#        print(wholeAngle, decimalAngle, distance)
+#        print(pixelWidthAvgX, pixelWidthAvgY)
+        
+        angleSend= "A"+ str(beaconAngle)
+        distanceSend="D"+str(distance) + "\n"
+        PositionAndAngleData= angleSend + distanceSend
+        ser.write(PositionAndAngleData.encode())
+        time.sleep(0.1)
+        print(angleSend +" " + distanceSend)
+        time.sleep(0.1)
+        ReadfromArduino()
 
 
 ####Uncomment the following lines if you want an image on your screen to help
