@@ -5,7 +5,7 @@ Group Members : Ben Thatcher, Gillian Yost, Chirs Hartsen, Dan Parr, Ruiqi Sun
 
 A summary of all files contained in this folder:
 
-Demo02_GoToBeaconTest.ino: Demo 2 code for testing going to the beacon
+Demo02_GoToBeaconTest.ino: Demo 2 code for testing going to the beacon, this was when the team was using i2c and the team eventually switched to serial
 
 Demo02_goToBeacon.ino: Final Demo 2 Code part 1 where the robot drives within 1 foot of the beacon
 
