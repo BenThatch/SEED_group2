@@ -5,9 +5,17 @@ Group Members : Ben Thatcher, Gillian Yost, Chirs Hartsen, Dan Parr, Ruiqi Sun
 
 A summary of all files contained in this folder:
 
+Demo02_GoToBeaconTest.ino: Demo 2 code for testing going to the beacon
+
+Demo02_goToBeacon.ino: Final Demo 2 Code part 1 where the robot drives within 1 foot of the beacon
+
+Demo02_moveTest.ino: Final Demo 2 Code Part 2 where robot drives within 1 foot of beacon and drives a circle around it
+
+Demo2_moveTestV2.ino: arduino script that performs all the desired movement for Demo 2 with some adjustments needed for accuracy
+
 test_Circle.ino: Arduino script that tests the motion of the robot in a cirle
 
-angle_distance.py: python script that returns the angle and distance from the robot to an aruco marker
+dist_angle_video.py: Final Demo 2 Code python script that returns the angle and distance from robot to an aruco marker by using video
 
-Demo2_moveTest.ino: arduino script that performs all the desired movement for Demo 2 with some adjustments needed for accuracy
+distance_angle.py: python script that returns the angle and distance from the robot to an aruco marker by taking pictures
 
