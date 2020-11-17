@@ -50,8 +50,8 @@ def ReadfromArduino():
             print("Communication Error")
 
 fov = 62.2 #Pi camera horizontal field of view in degrees, from camera specs
-f_len = 586#focal length (pixels); determined through triangulation
-markerLength = 47.625 #side length (mm) of aruco marker used in Demo 2
+f_len = 589 #focal length (pixels); determined through triangulation
+markerLength = 53 #side length (mm) of aruco marker used in Demo 2
 #f_len = 615 #focal length for a different camera
 #markerLength = 165 #side length of my printed aruco marker is 165mm long
 aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250) #dictionary of Aruco markers
